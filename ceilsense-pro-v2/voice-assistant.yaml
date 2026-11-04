@@ -1,0 +1,277 @@
+# Local wake word and Home Assistant Voice Assistant.
+substitutions:
+  wake_word: okay_nabu
+  micro_wake_word_gain_factor: "12"
+  wake_word_probability_cutoff: "0.80"
+  wake_word_sliding_window_size: "3"
+
+globals:
+  - id: voice_client_connected
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: voice_visual_active
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: voice_assistant_phase
+    type: int
+    restore_value: false
+    initial_value: "10"
+
+micro_wake_word:
+  id: micro_wake_word_01
+  microphone:
+    microphone: microphone_01
+    channels: 0
+    gain_factor: ${micro_wake_word_gain_factor}
+  models:
+    - model: ${wake_word}
+      probability_cutoff: ${wake_word_probability_cutoff}
+      sliding_window_size: ${wake_word_sliding_window_size}
+  on_wake_word_detected:
+    - micro_wake_word.stop:
+    - lambda: id(voice_visual_active) = true;
+    - if:
+        condition:
+          and:
+            - binary_sensor.is_off: adpd188bi_smoke_alert
+            - switch.is_off: remote_smoke_alarm
+        then:
+          - light.turn_on:
+              id: status_led
+              brightness: 80%
+              effect: "Voice Listening"
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+    - script.execute: recover_wake_word
+
+voice_assistant:
+  id: voice_assistant_01
+  microphone: microphone_01
+  media_player: media_player_01
+  micro_wake_word: micro_wake_word_01
+  use_wake_word: false
+  auto_gain: 31dBFS
+  noise_suppression_level: 2
+  on_client_connected:
+    - lambda: id(voice_client_connected) = true;
+    - if:
+        condition:
+          switch.is_on: use_wake_word
+        then:
+          - script.execute: start_wake_word
+  on_client_disconnected:
+    - lambda: |-
+        id(voice_client_connected) = false;
+        id(voice_assistant_phase) = 10;
+        id(voice_visual_active) = false;
+    - voice_assistant.stop:
+    - micro_wake_word.stop:
+    - script.execute: restore_status_led
+  on_listening:
+    - lambda: |-
+        id(voice_assistant_phase) = 2;
+        id(voice_visual_active) = true;
+    - if:
+        condition:
+          and:
+            - binary_sensor.is_off: adpd188bi_smoke_alert
+            - switch.is_off: remote_smoke_alarm
+        then:
+          - light.turn_on:
+              id: status_led
+              brightness: 80%
+              effect: "Voice Listening"
+  on_stt_vad_end:
+    - lambda: id(voice_assistant_phase) = 3;
+    - if:
+        condition:
+          and:
+            - binary_sensor.is_off: adpd188bi_smoke_alert
+            - switch.is_off: remote_smoke_alarm
+        then:
+          - light.turn_on:
+              id: status_led
+              brightness: 75%
+              effect: "Voice Thinking"
+  on_tts_start:
+    - lambda: id(voice_assistant_phase) = 4;
+    - if:
+        condition:
+          and:
+            - binary_sensor.is_off: adpd188bi_smoke_alert
+            - switch.is_off: remote_smoke_alarm
+        then:
+          - light.turn_on:
+              id: status_led
+              brightness: 65%
+              red: 0%
+              green: 100%
+              blue: 10%
+              effect: none
+  on_end:
+    - lambda: id(voice_visual_active) = false;
+    - script.execute: restore_status_led
+    - if:
+        condition:
+          switch.is_on: use_wake_word
+        then:
+          - script.execute: start_wake_word
+  on_error:
+    - lambda: |-
+        id(voice_assistant_phase) = 11;
+        id(voice_visual_active) = true;
+    - if:
+        condition:
+          and:
+            - binary_sensor.is_off: adpd188bi_smoke_alert
+            - switch.is_off: remote_smoke_alarm
+        then:
+          - light.turn_on:
+              id: status_led
+              brightness: 100%
+              red: 100%
+              green: 0%
+              blue: 0%
+              effect: none
+    - delay: 1s
+    - lambda: id(voice_visual_active) = false;
+    - script.execute: restore_status_led
+    - if:
+        condition:
+          switch.is_on: use_wake_word
+        then:
+          - script.execute: start_wake_word
+
+script:
+  - id: recover_wake_word
+    mode: restart
+    then:
+      - delay: 2s
+      - if:
+          condition:
+            and:
+              - switch.is_on: use_wake_word
+              - lambda: return !id(voice_client_connected);
+              - not:
+                  voice_assistant.is_running:
+              - not:
+                  micro_wake_word.is_running:
+          then:
+            - lambda: id(voice_visual_active) = false;
+            - script.execute:
+                id: buzzer_play
+                sound: error
+                priority: 20
+            - script.execute: restore_status_led
+            - script.execute: start_wake_word
+
+  - id: start_wake_word
+    mode: restart
+    then:
+      - wait_until:
+          condition:
+            and:
+              - not:
+                  voice_assistant.is_running:
+              - not:
+                  media_player.is_playing: media_player_01
+              - not:
+                  media_player.is_announcing: media_player_01
+      - if:
+          condition:
+            switch.is_on: use_wake_word
+          then:
+            - micro_wake_word.stop:
+            - wait_until:
+                not:
+                  micro_wake_word.is_running:
+            - delay: 250ms
+            - micro_wake_word.start:
+            - lambda: id(voice_assistant_phase) = 1;
+            - script.execute: restore_status_led
+
+  - id: stop_wake_word
+    mode: restart
+    then:
+      - script.stop: start_wake_word
+      - voice_assistant.stop:
+      - micro_wake_word.stop:
+      - lambda: |-
+          id(voice_assistant_phase) = 12;
+          id(voice_visual_active) = false;
+      - script.execute: restore_status_led
+
+  - id: restore_status_led
+    mode: restart
+    then:
+      - if:
+          condition:
+            or:
+              - binary_sensor.is_on: adpd188bi_smoke_alert
+              - switch.is_on: remote_smoke_alarm
+          then:
+            - light.turn_on:
+                id: status_led
+                effect: "Smoke Alarm"
+          else:
+            - if:
+                condition:
+                  binary_sensor.is_on: presence
+                then:
+                  - light.turn_on:
+                      id: status_led
+                      brightness: 60%
+                      effect: "Presence Active"
+                else:
+                  - light.turn_off: status_led
+
+switch:
+  - platform: template
+    id: use_wake_word
+    name: "Use Wake Word"
+    icon: mdi:assistant
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    entity_category: config
+    turn_on_action:
+      - voice_assistant.stop:
+      - delay: 1s
+      - script.execute: start_wake_word
+    turn_off_action:
+      - script.execute: stop_wake_word
+
+button:
+  - platform: template
+    id: voice_assistant_start_button
+    name: "Voice Assistant Start"
+    icon: mdi:microphone
+    on_press:
+      - voice_assistant.start:
+
+  - platform: template
+    id: voice_assistant_stop_button
+    name: "Voice Assistant Stop"
+    icon: mdi:microphone-off
+    on_press:
+      - script.execute: stop_wake_word
+
+text_sensor:
+  - platform: template
+    id: voice_assistant_phase_text
+    name: "Voice Assistant Phase"
+    icon: mdi:assistant
+    entity_category: diagnostic
+    update_interval: 1s
+    lambda: |-
+      switch (id(voice_assistant_phase)) {
+        case 1: return {"idle"};
+        case 2: return {"listening"};
+        case 3: return {"thinking"};
+        case 4: return {"replying"};
+        case 10: return {"not_ready"};
+        case 11: return {"error"};
+        case 12: return {"muted"};
+        default: return {"unknown"};
+      }

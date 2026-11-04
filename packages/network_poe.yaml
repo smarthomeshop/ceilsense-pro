@@ -1,0 +1,33 @@
+# PoE/Ethernet via W5500 on PCB#1.
+switch:
+  - platform: gpio
+    id: ethernet_power
+    name: "Ethernet Power"
+    internal: true
+    pin:
+      number: GPIO12
+      inverted: true
+    restore_mode: ALWAYS_ON
+
+ethernet:
+  type: W5500
+  clk_pin: GPIO20
+  mosi_pin: GPIO21
+  miso_pin: GPIO22
+  cs_pin: GPIO3
+  interrupt_pin: GPIO23
+  reset_pin: GPIO15
+  clock_speed: 20MHz
+
+text_sensor:
+  - platform: ethernet_info
+    ip_address:
+      name: "Ethernet IP Address"
+      id: network_ip
+      entity_category: diagnostic
+      disabled_by_default: true
+    mac_address:
+      name: "Ethernet MAC"
+      id: network_mac
+      entity_category: diagnostic
+      disabled_by_default: true

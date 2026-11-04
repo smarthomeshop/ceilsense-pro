@@ -1,0 +1,200 @@
+# Shared CeilSense Pro V2 ESP32-S3 hardware.
+substitutions:
+  project_name: "smarthomeshop.ceilsense_pro_v2"
+  project_version: "2.0.0"
+  log_level: INFO
+  i2c_frequency: 100kHz
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: true
+  min_version: 2026.6.1
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  build_path: ../build/${build_variant}
+  on_boot:
+    - priority: 520
+      then:
+        - light.turn_on:
+            id: status_led
+            brightness: 55%
+            effect: "Boot Spin"
+        - delay: 4s
+        - light.turn_off:
+            id: status_led
+            transition_length: 250ms
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  level: ${log_level}
+  hardware_uart: USB_SERIAL_JTAG
+
+api:
+  encryption:
+  reboot_timeout: 0s
+  max_connections: 8
+
+ota:
+  - platform: esphome
+
+safe_mode:
+
+debug:
+  update_interval: 15min
+
+web_server:
+  port: 80
+  version: 3
+  log: false
+
+i2c:
+  id: bus_a
+  scl: GPIO15
+  sda: GPIO16
+  scan: true
+  frequency: ${i2c_frequency}
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    name: "LED Ring"
+    pin: GPIO17
+    num_leds: 16
+    rgb_order: GRB
+    chipset: ws2812
+    restore_mode: ALWAYS_OFF
+    default_transition_length: 0s
+    effects:
+      - addressable_lambda:
+          name: "Boot Spin"
+          update_interval: 70ms
+          lambda: |-
+            static uint8_t position = 0;
+            it.all() = Color(0, 0, 0);
+            for (uint8_t tail = 0; tail < 5; tail++) {
+              const uint8_t index = (position + it.size() - tail) % it.size();
+              const uint8_t level = 220 >> tail;
+              it[index] = Color(0, level / 2, level);
+            }
+            position = (position + 1) % it.size();
+      - addressable_lambda:
+          name: "Presence Active"
+          update_interval: 250ms
+          lambda: |-
+            static uint8_t position = 0;
+            it.all() = Color(0, 8, 2);
+            for (uint8_t i = 0; i < it.size(); i++) {
+              if (((i + position) % 4) == 0) it[i] = Color(0, 150, 35);
+            }
+            position = (position + 1) % it.size();
+      - addressable_lambda:
+          name: "Voice Connecting"
+          update_interval: 80ms
+          lambda: |-
+            static uint8_t position = 0;
+            it.all() = Color(4, 3, 0);
+            it[position] = Color(210, 130, 0);
+            it[(position + 1) % it.size()] = Color(70, 35, 0);
+            position = (position + 1) % it.size();
+      - addressable_lambda:
+          name: "Voice Listening"
+          update_interval: 60ms
+          lambda: |-
+            static uint8_t position = 0;
+            it.all() = Color(0, 2, 8);
+            for (uint8_t tail = 0; tail < 4; tail++) {
+              const uint8_t index = (position + it.size() - tail) % it.size();
+              it[index] = Color(0, 70 >> tail, 240 >> tail);
+            }
+            position = (position + 1) % it.size();
+      - addressable_lambda:
+          name: "Voice Thinking"
+          update_interval: 100ms
+          lambda: |-
+            static uint8_t phase = 0;
+            const float wave = 0.5f - 0.5f * cosf((phase / 50.0f) * 2.0f * 3.14159265f);
+            const uint8_t level = static_cast<uint8_t>(25 + 170 * wave);
+            it.all() = Color(level, 0, level);
+            phase = (phase + 1) % 50;
+      - strobe:
+          name: "Smoke Alarm"
+          colors:
+            - state: true
+              brightness: 100%
+              red: 100%
+              green: 0%
+              blue: 0%
+              duration: 250ms
+            - state: false
+              duration: 250ms
+
+sensor:
+  - platform: uptime
+    name: "Uptime"
+    id: uptime_sensor
+    entity_category: diagnostic
+    update_interval: 60s
+
+  - platform: internal_temperature
+    name: "CPU Temperature"
+    id: cpu_temperature
+    entity_category: diagnostic
+    update_interval: 60s
+
+button:
+  - platform: restart
+    name: "Restart Device"
+    id: btn_restart
+
+  - platform: factory_reset
+    name: "Factory Reset"
+    id: factory_reset_button
+    entity_category: config
+    disabled_by_default: true
+
+text_sensor:
+  - platform: debug
+    device:
+      name: "Device Info"
+      entity_category: diagnostic
+    reset_reason:
+      name: "ESP Reset Reason"
+      id: esp_reset_reason_text
+      entity_category: diagnostic
+      disabled_by_default: true
+
+  - platform: template
+    name: "Software Version"
+    id: ceilsense_software_version_text
+    update_interval: 5h
+    lambda: return {"${project_version}"};
+
+  - platform: template
+    name: "Hardware Version"
+    id: ceilsense_hardware_version_text
+    update_interval: 5h
+    lambda: return {"${ceilsense_hardware_version}"};
+
+  - platform: template
+    name: "Network Variant"
+    id: ceilsense_network_variant_text
+    update_interval: 5h
+    lambda: return {"${default_network}"};
+
+  - platform: template
+    name: "Radar Variant"
+    id: ceilsense_radar_variant_text
+    update_interval: 5h
+    lambda: return {"${radar_variant}"};

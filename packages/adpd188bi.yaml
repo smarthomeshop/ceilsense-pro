@@ -1,0 +1,112 @@
+substitutions:
+  adpd188bi_components_path: components
+
+external_components:
+  - source:
+      type: local
+      path: ${adpd188bi_components_path}
+    components: [adpd188bi]
+
+sensor:
+  - platform: adpd188bi
+    id: adpd188bi_smoke_sensor
+    i2c_id: bus_a
+    address: 0x64
+    update_interval: 5s
+    blue:
+      name: "ADPD188BI Blue"
+      id: adpd188bi_blue
+    infrared:
+      name: "ADPD188BI Infrared"
+      id: adpd188bi_infrared
+    blue_baseline:
+      name: "ADPD188BI Blue Baseline"
+      id: adpd188bi_blue_baseline
+      disabled_by_default: true
+    infrared_baseline:
+      name: "ADPD188BI Infrared Baseline"
+      id: adpd188bi_infrared_baseline
+      disabled_by_default: true
+    blue_delta:
+      name: "ADPD188BI Blue Delta"
+      id: adpd188bi_blue_delta
+    infrared_delta:
+      name: "ADPD188BI Infrared Delta"
+      id: adpd188bi_infrared_delta
+    ratio:
+      name: "ADPD188BI Blue IR Ratio"
+      id: adpd188bi_blue_ir_ratio
+      disabled_by_default: true
+    smoke_index:
+      name: "ADPD188BI Smoke Index"
+      id: adpd188bi_smoke_index
+    device_id:
+      name: "ADPD188BI Device ID"
+      id: adpd188bi_device_id
+      disabled_by_default: true
+    efuse_module_id:
+      name: "ADPD188BI eFuse Module ID"
+      id: adpd188bi_efuse_module_id
+      disabled_by_default: true
+    blue_calibration_gain:
+      name: "ADPD188BI Blue Calibration Gain"
+      id: adpd188bi_blue_calibration_gain
+      disabled_by_default: true
+    infrared_calibration_gain:
+      name: "ADPD188BI Infrared Calibration Gain"
+      id: adpd188bi_infrared_calibration_gain
+      disabled_by_default: true
+    smoke_detected:
+      name: "ADPD188BI Smoke Alert"
+      id: adpd188bi_smoke_alert
+      filters:
+        # The component itself confirms four stable windows before it
+        # reports smoke. These filters only remove API-level chatter.
+        - delayed_on: 5s
+        - delayed_off: 15s
+      # Local automations (no WiFi/API needed), ids from
+      # packages/smoke_alarm.yaml, buzzer.yaml and base.yaml.
+      on_press:
+        - script.execute: smoke_alarm_siren
+        - light.turn_on:
+            id: status_led
+            effect: "Smoke Alarm"
+      on_release:
+        # Keep alarming if the interconnect (Remote Smoke Alarm) is active.
+        - if:
+            condition:
+              switch.is_off: remote_smoke_alarm
+            then:
+              - script.stop: smoke_alarm_siren
+              - script.execute: buzzer_stop
+              - light.turn_off: status_led
+              - globals.set:
+                  id: smoke_alarm_silenced
+                  value: 'false'
+              - script.stop: smoke_alarm_hush
+    measurement_stable:
+      name: "ADPD188BI Measurement Stable"
+      id: adpd188bi_measurement_stable
+      entity_category: diagnostic
+    alarm_candidate:
+      name: "ADPD188BI Alarm Candidate"
+      id: adpd188bi_alarm_candidate
+      entity_category: diagnostic
+    baseline_ready:
+      name: "ADPD188BI Baseline Ready"
+      id: adpd188bi_baseline_ready
+      entity_category: diagnostic
+    calibration_ready:
+      name: "ADPD188BI eFuse Calibration Ready"
+      id: adpd188bi_calibration_ready
+      entity_category: diagnostic
+    apply_efuse_calibration: true
+    smoke_index_threshold: 50.0
+    baseline_samples: 36
+    baseline_alpha: 0.02
+    samples_per_window: 15
+    max_sample_spread: 30.0
+    min_channel_rise: 15.0
+    max_baseline_drift: 20.0
+    alarm_confirmations: 4
+    clear_confirmations: 3

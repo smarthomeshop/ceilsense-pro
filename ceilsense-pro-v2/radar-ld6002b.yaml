@@ -1,0 +1,124 @@
+# Optional LD6002B-only 3D tracking variant.
+substitutions:
+  radar_variant: "LD6002B"
+  ld6002b_component_id: tracking_radar
+
+esphome:
+  includes:
+    - <driver/gpio.h>
+  on_boot:
+    - priority: 1000
+      then:
+        - lambda: |-
+            gpio_set_direction(GPIO_NUM_4, GPIO_MODE_OUTPUT);
+            gpio_set_pull_mode(GPIO_NUM_4, GPIO_PULLDOWN_ONLY);
+            gpio_set_level(GPIO_NUM_4, 0);
+    - priority: -100
+      then:
+        - delay: 5s
+        - switch.turn_on: ld6002b_target_display
+        - delay: 10s
+        - switch.turn_on: ld6002b_target_display
+
+external_components:
+  - source: github://smarthomeshop/ld6002b@v0.1.0-beta.1
+    components: [ld6002b]
+    refresh: 1d
+
+packages:
+  radar_mounting: github://smarthomeshop/radar-mounting/packages/mounting/ceiling.yaml@v1.0.0
+  radar_profile: github://smarthomeshop/radar-mounting/packages/radars/ld6002b.yaml@v1.0.0
+  radar_ceiling_mode: github://smarthomeshop/ld6002b/packages/ld6002b-ceiling-mode.yaml@v0.1.0-beta.1
+
+uart:
+  - id: uart_tracking
+    tx_pin: GPIO39
+    rx_pin: GPIO38
+    baud_rate: 115200
+    parity: NONE
+    stop_bits: 1
+    rx_buffer_size: 4096
+
+ld6002b:
+  id: tracking_radar
+  uart_id: uart_tracking
+  auto_wake: false
+  throttle: 1s
+  max_data_len: 4096
+
+binary_sensor:
+  - platform: template
+    id: secondary_presence
+    internal: true
+    lambda: return false;
+
+  - platform: gpio
+    name: "LD6002B Raw Presence"
+    pin:
+      number: GPIO5
+      mode:
+        input: true
+        pulldown: true
+    device_class: occupancy
+    entity_category: diagnostic
+
+  - platform: ld6002b
+    ld6002b_id: tracking_radar
+    target:
+      name: "Tracking Presence"
+      id: tracking_presence
+    target_1:
+      name: "Target 1 Presence"
+    target_2:
+      name: "Target 2 Presence"
+    target_3:
+      name: "Target 3 Presence"
+
+sensor:
+  - platform: ld6002b
+    ld6002b_id: tracking_radar
+    target_count:
+      name: "Tracking Target Count"
+      id: tracking_target_count
+    point_count:
+      name: "Tracking Point Count"
+      entity_category: diagnostic
+    target_1:
+      x:
+        name: "Target 1 X"
+      y:
+        name: "Target 1 Y"
+      z:
+        name: "Target 1 Z"
+    target_2:
+      x:
+        name: "Target 2 X"
+      y:
+        name: "Target 2 Y"
+      z:
+        name: "Target 2 Z"
+    target_3:
+      x:
+        name: "Target 3 X"
+      y:
+        name: "Target 3 Y"
+      z:
+        name: "Target 3 Z"
+
+text_sensor:
+  - platform: ld6002b
+    ld6002b_id: tracking_radar
+    work_mode:
+      name: "Tracking Work Mode"
+      entity_category: diagnostic
+    ota_version:
+      name: "Tracking Radar Firmware"
+      entity_category: diagnostic
+
+switch:
+  - platform: ld6002b
+    ld6002b_id: tracking_radar
+    target_display:
+      id: ld6002b_target_display
+      name: "Tracking Target Display"
+      entity_category: config

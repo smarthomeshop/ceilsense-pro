@@ -1,0 +1,23 @@
+# Optional LD2460-only tracking variant on the TX1/RX1 connector.
+substitutions:
+  radar_variant: "LD2460"
+  ld2460_tx_pin: GPIO39
+  ld2460_rx_pin: GPIO38
+  ld2460_startup_installation_mode: top
+
+packages:
+  ld2460:
+    url: https://github.com/smarthomeshop/ld2460
+    ref: v0.4.0
+    files:
+      - tracking-ld2460.yaml
+      - packages/ld2460-polygon-zones.yaml
+    refresh: 1d
+  radar_mounting: github://smarthomeshop/radar-mounting/packages/mounting/ceiling.yaml@v1.0.0
+  radar_profile: github://smarthomeshop/radar-mounting/packages/radars/ld2460.yaml@v1.0.0
+
+binary_sensor:
+  - platform: template
+    id: secondary_presence
+    internal: true
+    lambda: return false;

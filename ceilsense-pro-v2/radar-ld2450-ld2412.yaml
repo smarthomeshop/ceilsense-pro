@@ -1,0 +1,98 @@
+# Standard option: LD2450 tracking plus LD2412 presence fallback.
+substitutions:
+  radar_variant: "LD2450 + LD2412"
+  ld2450_uart_tx_pin: GPIO6
+  ld2450_uart_rx_pin: GPIO7
+
+packages:
+  ld2450:
+    url: https://github.com/smarthomeshop/ld2450
+    ref: v1.0.0
+    files:
+      - packages/ld2450-base.yaml
+      - packages/ld2450-polygon-zones.yaml
+    refresh: 1d
+  radar_mounting: github://smarthomeshop/radar-mounting/packages/mounting/ceiling.yaml@v1.0.0
+  radar_profile: github://smarthomeshop/radar-mounting/packages/radars/ld2450.yaml@v1.0.0
+
+uart:
+  - id: uart_ld2412
+    tx_pin: GPIO39
+    rx_pin: GPIO38
+    baud_rate: 115200
+    parity: NONE
+    stop_bits: 1
+
+ld2412:
+  id: ld2412_radar
+  uart_id: uart_ld2412
+
+binary_sensor:
+  - platform: ld2412
+    ld2412_id: ld2412_radar
+    has_target:
+      name: "LD2412 Presence"
+      id: secondary_presence
+      device_class: occupancy
+    has_moving_target:
+      name: "LD2412 Moving Target"
+      id: ld2412_moving_target
+    has_still_target:
+      name: "LD2412 Still Target"
+      id: ld2412_still_target
+
+sensor:
+  - platform: ld2412
+    ld2412_id: ld2412_radar
+    moving_distance:
+      name: "LD2412 Moving Distance"
+    still_distance:
+      name: "LD2412 Still Distance"
+    moving_energy:
+      name: "LD2412 Moving Energy"
+    still_energy:
+      name: "LD2412 Still Energy"
+    detection_distance:
+      name: "LD2412 Detection Distance"
+
+text_sensor:
+  - platform: ld2412
+    ld2412_id: ld2412_radar
+    version:
+      name: "LD2412 Firmware Version"
+      id: ld2412_firmware_version
+    mac_address:
+      name: "LD2412 MAC"
+
+switch:
+  - platform: ld2412
+    ld2412_id: ld2412_radar
+    engineering_mode:
+      name: "LD2412 Engineering Mode"
+      entity_category: config
+    bluetooth:
+      name: "LD2412 Bluetooth"
+      entity_category: config
+
+number:
+  - platform: ld2412
+    ld2412_id: ld2412_radar
+    timeout:
+      name: "LD2412 Presence Timeout"
+      entity_category: config
+    min_distance_gate:
+      name: "LD2412 Minimum Distance Gate"
+      entity_category: config
+    max_distance_gate:
+      name: "LD2412 Maximum Distance Gate"
+      entity_category: config
+
+button:
+  - platform: ld2412
+    ld2412_id: ld2412_radar
+    restart:
+      name: "LD2412 Restart"
+      entity_category: diagnostic
+    query_params:
+      name: "LD2412 Query Parameters"
+      entity_category: diagnostic

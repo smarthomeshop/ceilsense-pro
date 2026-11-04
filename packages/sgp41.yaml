@@ -1,0 +1,14 @@
+# Optional SGP41 connector on PCB#2.
+sensor:
+  - platform: sgp4x
+    i2c_id: bus_a
+    voc:
+      name: "SGP41 VOC Index"
+      id: sgp41_voc_index
+    nox:
+      name: "SGP41 NOx Index"
+      id: sgp41_nox_index
+    compensation:
+      humidity_source: scd41_humidity
+      temperature_source: scd41_temperature
+    update_interval: 60s

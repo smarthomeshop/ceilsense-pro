@@ -1,0 +1,13 @@
+# Shared feature stack for every CeilSense Pro V2 firmware variant.
+substitutions:
+  adpd188bi_components_path: ../components
+
+packages:
+  base: !include base.yaml
+  audio: !include audio-voice-hardware.yaml
+  buzzer: !include ../packages/buzzer.yaml
+  environment: !include environment.yaml
+  adpd188bi: !include ../packages/adpd188bi.yaml
+  smoke_alarm: !include ../packages/smoke_alarm.yaml
+  voice_assistant: !include voice-assistant.yaml
+  presence: !include presence.yaml

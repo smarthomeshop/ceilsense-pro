@@ -1,0 +1,181 @@
+# Run the production package and alarm scripts with silent outputs and stub I/O.
+esphome:
+  name: ceilsense-pro-buzzer-test
+  includes:
+    - buzzer_host.h
+  platformio_options:
+    build_flags:
+      # The stub type must exist before generated global declarations.
+      - -include src/buzzer_host.h
+  on_boot:
+    - priority: -200
+      then:
+        - script.execute: run_pro_buzzer_tests
+
+host:
+
+logger:
+  level: INFO
+
+packages:
+  buzzer: !include ../packages/buzzer.yaml
+  smoke_alarm: !include ../packages/smoke_alarm.yaml
+
+globals:
+  - id: adpd188bi_smoke_sensor
+    type: pro_buzzer_test::OpticalStub
+    initial_value: "pro_buzzer_test::OpticalStub{}"
+  - id: host_buzzer_level
+    type: float
+    initial_value: "0.0f"
+  - id: host_ticks
+    type: int
+    initial_value: "0"
+  - id: host_ticks_before
+    type: int
+    initial_value: "0"
+
+output:
+  # Replace only the hardware output. Keep the actual device cap and melodies.
+  - id: !extend buzzer_output
+    platform: template
+    pin: !remove
+    frequency: !remove
+    type: float
+    write_action:
+      - lambda: id(host_buzzer_level) = state;
+  - platform: template
+    id: host_red
+    type: float
+    write_action: []
+  - platform: template
+    id: host_green
+    type: float
+    write_action: []
+  - platform: template
+    id: host_blue
+    type: float
+    write_action: []
+
+light:
+  - platform: rgb
+    id: status_led
+    red: host_red
+    green: host_green
+    blue: host_blue
+    default_transition_length: 0s
+    effects:
+      - strobe:
+          name: Smoke Alarm
+
+sensor:
+  - platform: template
+    id: adpd188bi_smoke_index
+    update_interval: never
+
+binary_sensor:
+  - platform: template
+    id: adpd188bi_smoke_alert
+
+interval:
+  - interval: 20ms
+    then:
+      - lambda: ++id(host_ticks);
+
+script:
+  - id: run_pro_buzzer_tests
+    then:
+      - delay: 100ms
+      - lambda: |-
+          PRO_CHECK(!id(buzzer_player).is_playing());
+          PRO_CHECK(id(host_buzzer_level) == 0.0f);
+          PRO_CHECK(id(buzzer_current_sound).state == "Idle");
+          id(adpd188bi_smoke_index).publish_state(1.0f);
+          id(buzzer_mute).turn_off();
+          auto volume = id(buzzer_volume).make_call();
+          volume.set_value(100); volume.perform();
+          id(smoke_siren_enabled).turn_on();
+          id(adpd188bi_smoke_alert).publish_state(true);
+          id(buzzer_play).execute("notify", 0);
+          id(smoke_alarm_siren).execute();
+      - delay: 50ms
+      - lambda: |-
+          PRO_CHECK(id(buzzer_current_sound).state == "warning");
+          PRO_CHECK(id(buzzer_active_priority) == 100);
+          PRO_CHECK(std::abs(id(host_buzzer_level) - 0.4f) < 0.001f);
+          id(buzzer_test).press();
+          PRO_CHECK(id(buzzer_current_sound).state == "warning");
+          PRO_CHECK(id(buzzer_active_priority) == 100);
+          id(buzzer_mute).turn_on();
+          PRO_CHECK(!id(buzzer_player).is_playing());
+          PRO_CHECK(id(host_buzzer_level) == 0.0f);
+          id(host_ticks_before) = id(host_ticks);
+      - delay: 350ms
+      - lambda: |-
+          PRO_CHECK(id(smoke_alarm_siren).is_running());
+          PRO_CHECK(id(host_ticks) - id(host_ticks_before) >= 5);
+          PRO_CHECK(!id(buzzer_player).is_playing());
+          auto volume = id(buzzer_volume).make_call();
+          volume.set_value(0); volume.perform();
+          id(buzzer_mute).turn_off();
+          id(host_ticks_before) = id(host_ticks);
+      - delay: 350ms
+      - lambda: |-
+          PRO_CHECK(id(host_ticks) - id(host_ticks_before) >= 5);
+          PRO_CHECK(!id(buzzer_player).is_playing());
+          auto volume = id(buzzer_volume).make_call();
+          volume.set_value(100); volume.perform();
+      - delay: 150ms
+      - lambda: |-
+          PRO_CHECK(id(buzzer_current_sound).state == "warning");
+          PRO_CHECK(id(buzzer_active_priority) == 100);
+          id(smoke_alarm_hush).execute();
+          PRO_CHECK(id(smoke_alarm_silenced));
+          PRO_CHECK(!id(buzzer_player).is_playing());
+          PRO_CHECK(id(host_buzzer_level) == 0.0f);
+      - delay: 150ms
+      - lambda: |-
+          PRO_CHECK(!id(smoke_alarm_siren).is_running());
+          PRO_CHECK(id(smoke_alarm_hush).is_running());
+          id(adpd188bi_smoke_alert).publish_state(false);
+          id(smoke_alarm_hush).stop();
+          id(smoke_alarm_silenced) = false;
+          pro_buzzer_test::optical_pass = true;
+          id(smoke_test_button).press();
+          PRO_CHECK(id(smoke_self_test_result).state == "PASS");
+          PRO_CHECK(id(buzzer_current_sound).state == "warning");
+          PRO_CHECK(id(buzzer_active_priority) == 50);
+          id(buzzer_test).press();
+          PRO_CHECK(id(buzzer_current_sound).state == "warning");
+      - wait_until:
+          condition:
+            not:
+              rtttl.is_playing:
+                id: buzzer_player
+          timeout: 5s
+      - lambda: |-
+          PRO_CHECK(!id(buzzer_player).is_playing());
+          PRO_CHECK(id(buzzer_current_sound).state == "Idle");
+          pro_buzzer_test::optical_pass = false;
+          id(smoke_test_button).press();
+          PRO_CHECK(id(smoke_self_test_result).state == "FAIL");
+          PRO_CHECK(id(buzzer_current_sound).state == "error");
+          PRO_CHECK(id(buzzer_active_priority) == 50);
+      - wait_until:
+          condition:
+            not:
+              rtttl.is_playing:
+                id: buzzer_player
+          timeout: 5s
+      - delay: 30ms
+      - lambda: |-
+          PRO_CHECK(!id(buzzer_player).is_playing());
+          PRO_CHECK(!id(buzzer_playing).state);
+          PRO_CHECK(id(buzzer_current_sound).state == "Idle");
+          PRO_CHECK(id(host_buzzer_level) == 0.0f);
+          id(buzzer_test).press();
+          PRO_CHECK(id(buzzer_current_sound).state == "confirm");
+          PRO_CHECK(id(buzzer_active_priority) == 0);
+          id(buzzer_stop_button).press();
+          PRO_CHECK(!id(buzzer_player).is_playing());
+          pro_buzzer_test::finish();

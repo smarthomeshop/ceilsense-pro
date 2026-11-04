@@ -1,0 +1,16 @@
+substitutions:
+  device_name: ceilsense-pro-v2
+  friendly_name: "CeilSense Pro V2"
+  ceilsense_hardware_version: "pro-v2-s3"
+  build_variant: "ceilsense-pro-v2-wifi-ld2450-ld2412"
+  default_network: "WiFi"
+  cloud_enabled: "false"
+
+packages:
+  common: !include device-common.yaml
+  network: !include network-wifi.yaml
+  radar: !include radar-ld2450-ld2412.yaml
+
+dashboard_import:
+  package_import_url: github://smarthomeshop/ceilsense-pro/ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld2450-ld2412.yaml@main
+  import_full_config: false

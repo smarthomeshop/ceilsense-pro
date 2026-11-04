@@ -1,0 +1,62 @@
+# CeilSense Pro V2 microphone and MAX98357A speaker path.
+substitutions:
+  microphone_channel: left
+
+i2s_audio:
+  - id: i2s_in
+    i2s_lrclk_pin: GPIO41
+    i2s_bclk_pin: GPIO40
+  - id: i2s_out
+    i2s_lrclk_pin: GPIO13
+    i2s_bclk_pin: GPIO12
+
+microphone:
+  - platform: i2s_audio
+    id: microphone_01
+    i2s_audio_id: i2s_in
+    i2s_din_pin: GPIO42
+    adc_type: external
+    pdm: false
+    channel: ${microphone_channel}
+    sample_rate: 16000
+    bits_per_sample: 32bit
+    correct_dc_offset: true
+
+speaker:
+  - platform: i2s_audio
+    id: speaker_output
+    i2s_audio_id: i2s_out
+    i2s_dout_pin: GPIO14
+    dac_type: external
+    sample_rate: 48000
+    bits_per_sample: 16bit
+    channel: mono
+
+  - platform: mixer
+    id: mixer_speaker_id
+    output_speaker: speaker_output
+    source_speakers:
+      - id: announcement_spk_mixer_input
+      - id: media_spk_mixer_input
+
+  - platform: resampler
+    id: media_spk_resampling_input
+    output_speaker: media_spk_mixer_input
+
+  - platform: resampler
+    id: announcement_spk_resampling_input
+    output_speaker: announcement_spk_mixer_input
+
+media_player:
+  - platform: speaker
+    id: media_player_01
+    name: "Media Player"
+    task_stack_in_psram: true
+    media_pipeline:
+      speaker: media_spk_resampling_input
+      num_channels: 1
+      format: NONE
+    announcement_pipeline:
+      speaker: announcement_spk_resampling_input
+      num_channels: 1
+      format: NONE

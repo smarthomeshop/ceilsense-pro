@@ -1,0 +1,183 @@
+# Local smoke alarm behaviour: buzzer siren + LED strobe, driven entirely
+# on-device so the alarm keeps working without WiFi/API connectivity.
+# Depends on ids from other packages:
+#   - buzzer_play/stop/player (shared package via packages/buzzer.yaml)
+#   - adpd188bi_smoke_*   (packages/adpd188bi.yaml)
+#   - status_led          (packages/base.yaml, incl. "Smoke Alarm" effect)
+#
+# NOTE: this is uncertified test/calibration logic, not an EN 14604 smoke
+# alarm. See README.md "Smoke Detection Disclaimer".
+
+globals:
+  - id: smoke_alarm_silenced
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+switch:
+  # Allows muting the siren during bench calibration. Restored across
+  # reboots so a deployed unit keeps its configured behaviour.
+  - platform: template
+    name: "Smoke Siren Enabled"
+    id: smoke_siren_enabled
+    icon: mdi:bullhorn
+    entity_category: config
+    optimistic: true
+    # A bench unit must be armed deliberately after its optical data has
+    # been validated with a controlled smoke test.
+    restore_mode: RESTORE_DEFAULT_OFF
+
+  # Interconnect: turn on from Home Assistant to sound this unit when
+  # another detector alarms. Never restored after reboot/power loss so a
+  # unit can't come back latched in alarm.
+  - platform: template
+    name: "Remote Smoke Alarm"
+    id: remote_smoke_alarm
+    icon: mdi:smoke-detector-alert
+    optimistic: true
+    restore_mode: ALWAYS_OFF
+    on_turn_on:
+      - script.execute: smoke_alarm_siren
+      - light.turn_on:
+          id: status_led
+          effect: "Smoke Alarm"
+    on_turn_off:
+      - if:
+          condition:
+            binary_sensor.is_off: adpd188bi_smoke_alert
+          then:
+            - script.stop: smoke_alarm_siren
+            - script.execute: buzzer_stop
+            - light.turn_off: status_led
+            - globals.set:
+                id: smoke_alarm_silenced
+                value: 'false'
+            - script.stop: smoke_alarm_hush
+
+button:
+  # Hush: mutes an active alarm for 10 minutes, then re-arms.
+  - platform: template
+    name: "Smoke Alarm Silence"
+    id: smoke_alarm_silence_button
+    icon: mdi:volume-off
+    on_press:
+      - script.execute: smoke_alarm_hush
+
+  # Test button like a real smoke alarm: runs a live sensor self-test
+  # (I2C + optical sample on both channels). Pass: sounds the alarm pattern
+  # and strobes. Fail: error tone, solid red ring and a FAIL result.
+  - platform: template
+    name: "Smoke Test"
+    id: smoke_test_button
+    icon: mdi:smoke-detector-variant-alert
+    entity_category: diagnostic
+    on_press:
+      - if:
+          condition:
+            lambda: 'return id(adpd188bi_smoke_sensor).perform_self_test();'
+          then:
+            - text_sensor.template.publish:
+                id: smoke_self_test_result
+                state: "PASS"
+            - light.turn_on:
+                id: status_led
+                effect: "Smoke Alarm"
+            - script.execute:
+                id: buzzer_play
+                sound: warning
+                priority: 50
+          else:
+            - text_sensor.template.publish:
+                id: smoke_self_test_result
+                state: "FAIL"
+            - script.execute:
+                id: buzzer_play
+                sound: error
+                priority: 50
+            - light.turn_on:
+                id: status_led
+                brightness: 100%
+                red: 100%
+                green: 0%
+                blue: 0%
+      - delay: 4s
+      # Leave the light alone if a real or remote alarm is active.
+      - if:
+          condition:
+            and:
+              - binary_sensor.is_off: adpd188bi_smoke_alert
+              - switch.is_off: remote_smoke_alarm
+          then:
+            - light.turn_off: status_led
+
+script:
+  # Repeats the ISO 8201 temporal-three pattern (3 beeps, pause) at ~3.1 kHz
+  # for as long as smoke is detected, unless disabled or hushed.
+  - id: smoke_alarm_siren
+    mode: restart
+    then:
+      - while:
+          condition:
+            and:
+              - or:
+                  - binary_sensor.is_on: adpd188bi_smoke_alert
+                  - switch.is_on: remote_smoke_alarm
+              - switch.is_on: smoke_siren_enabled
+              - lambda: 'return !id(smoke_alarm_silenced);'
+          then:
+            - script.execute:
+                id: buzzer_play
+                sound: warning
+                priority: 100
+            - wait_until:
+                condition:
+                  not:
+                    rtttl.is_playing:
+                      id: buzzer_player
+                timeout: 5s
+            # Muted/zero-volume requests return immediately. Yield before the
+            # next attempt so a persistent alert cannot monopolize the loop.
+            - delay: 100ms
+
+  - id: smoke_alarm_hush
+    mode: restart
+    then:
+      - globals.set:
+          id: smoke_alarm_silenced
+          value: 'true'
+      - script.execute: buzzer_stop
+      - delay: 10min
+      - globals.set:
+          id: smoke_alarm_silenced
+          value: 'false'
+      - if:
+          condition:
+            or:
+              - binary_sensor.is_on: adpd188bi_smoke_alert
+              - switch.is_on: remote_smoke_alarm
+          then:
+            - script.execute: smoke_alarm_siren
+
+text_sensor:
+  - platform: template
+    name: "Smoke Self Test Result"
+    id: smoke_self_test_result
+    icon: mdi:clipboard-check
+    entity_category: diagnostic
+    update_interval: never
+
+binary_sensor:
+  # Surfaces sensor faults locally: setup failure or failed I2C reads
+  # (smoke_index goes NaN) would otherwise silently report "no smoke".
+  - platform: template
+    name: "ADPD188BI Sensor Problem"
+    id: adpd188bi_sensor_problem
+    device_class: problem
+    entity_category: diagnostic
+    lambda: |-
+      if (id(adpd188bi_smoke_sensor).status_has_error() ||
+          id(adpd188bi_smoke_sensor).is_failed())
+        return true;
+      if (!id(adpd188bi_smoke_index).has_state())
+        return false;
+      return isnan(id(adpd188bi_smoke_index).state);

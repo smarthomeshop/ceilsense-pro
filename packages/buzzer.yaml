@@ -1,0 +1,20 @@
+# On-board transistor-driven buzzer on GPIO2.
+substitutions:
+  buzzer_pin: GPIO2
+  buzzer_max_power: "40%"
+  # Retain the Pro's existing optical-test cues in the shared catalog.
+  buzzer_melody_warning: "smoke:d=4,o=7,b=120:g,p,g,p,g,2p"
+  buzzer_melody_error: "fail:d=2,o=4,b=100:c,p,c"
+
+packages:
+  shared_buzzer:
+    url: https://github.com/smarthomeshop/buzzer
+    ref: v1.0.0
+    files:
+      - packages/passive.yaml
+    refresh: 1d
+
+# Keep the old 40% RTTTL duty as the first-use volume; later choices restore.
+number:
+  - id: !extend buzzer_volume
+    initial_value: 100

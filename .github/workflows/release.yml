@@ -1,0 +1,79 @@
+name: Release firmware
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+env:
+  ESPHOME_VERSION: "2026.6.1"
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: WiFi
+            file: ceilsense-pro-wifi.yaml
+            artifact: ceilsense-pro-wifi
+          - name: PoE Ethernet
+            file: ceilsense-pro-poe.yaml
+            artifact: ceilsense-pro-poe
+          - name: V2 WiFi LD2450 and LD2412
+            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld2450-ld2412.yaml
+            artifact: ceilsense-pro-v2-wifi-ld2450-ld2412
+          - name: V2 Ethernet LD2450 and LD2412
+            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld2450-ld2412.yaml
+            artifact: ceilsense-pro-v2-ethernet-ld2450-ld2412
+          - name: V2 WiFi LD2460
+            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld2460.yaml
+            artifact: ceilsense-pro-v2-wifi-ld2460
+          - name: V2 Ethernet LD2460
+            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld2460.yaml
+            artifact: ceilsense-pro-v2-ethernet-ld2460
+          - name: V2 WiFi LD6002B
+            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld6002b.yaml
+            artifact: ceilsense-pro-v2-wifi-ld6002b
+          - name: V2 Ethernet LD6002B
+            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld6002b.yaml
+            artifact: ceilsense-pro-v2-ethernet-ld6002b
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile firmware
+        run: |
+          docker run --rm -v "$PWD":/config -w /config \
+            "esphome/esphome:${ESPHOME_VERSION}" compile "${{ matrix.file }}"
+      - name: Collect release files
+        run: |
+          mkdir -p dist
+          factory_bin=$(find . -type f -path "*/${{ matrix.artifact }}/*" -name firmware.factory.bin -print -quit)
+          ota_bin=$(find . -type f -path "*/${{ matrix.artifact }}/*" -name firmware.bin -print -quit)
+          test -n "$factory_bin"
+          test -n "$ota_bin"
+          cp "$factory_bin" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.factory.bin"
+          cp "$ota_bin" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.ota.bin"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.artifact }}
+          path: dist/*.bin
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.bin --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes

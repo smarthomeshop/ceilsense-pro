@@ -1,0 +1,122 @@
+# Environmental sensors fitted to, or exposed by, CeilSense Pro V2.
+substitutions:
+  scd4x_temperature_offset: "5.0"
+
+sensor:
+  - platform: veml7700
+    id: ambient_light_sensor
+    i2c_id: bus_a
+    address: 0x10
+    auto_mode: true
+    ambient_light:
+      name: "Illuminance"
+      id: illuminance
+    full_spectrum:
+      name: "Full Spectrum Light"
+      id: full_spectrum_light
+      disabled_by_default: true
+    infrared:
+      name: "Infrared Light"
+      id: infrared_light
+      disabled_by_default: true
+    update_interval: 30s
+
+  - platform: bmp3xx_i2c
+    id: bmp388_sensor
+    i2c_id: bus_a
+    address: 0x76
+    temperature:
+      name: "BMP388 Temperature"
+      id: bmp_temperature
+    pressure:
+      name: "BMP388 Pressure"
+      id: bmp_pressure
+    update_interval: 60s
+
+  - platform: scd4x
+    id: scd41_sensor
+    i2c_id: bus_a
+    address: 0x62
+    co2:
+      name: "SCD41 CO2"
+      id: scd41_co2
+    temperature:
+      name: "SCD41 Temperature"
+      id: scd41_temperature
+      filters:
+        - lambda: return x + id(scd41_extra_temperature_offset).state;
+    humidity:
+      name: "SCD41 Humidity"
+      id: scd41_humidity
+      filters:
+        - lambda: return x + id(scd41_humidity_offset).state;
+    measurement_mode: low_power_periodic
+    automatic_self_calibration: true
+    update_interval: 30s
+    temperature_offset: ${scd4x_temperature_offset}
+    ambient_pressure_compensation_source: bmp_pressure
+
+  - platform: sgp4x
+    id: sgp41_sensor
+    i2c_id: bus_a
+    voc:
+      name: "SGP41 VOC Index"
+      id: sgp41_voc_index
+    nox:
+      name: "SGP41 NOx Index"
+      id: sgp41_nox_index
+    compensation:
+      humidity_source: scd41_humidity
+      temperature_source: scd41_temperature
+    update_interval: 60s
+
+  - platform: sht4x
+    id: sht45_sensor
+    i2c_id: bus_a
+    address: 0x44
+    temperature:
+      name: "SHT45 Temperature"
+      id: sht45_temperature
+    humidity:
+      name: "SHT45 Humidity"
+      id: sht45_humidity
+    precision: High
+    update_interval: 60s
+
+number:
+  - platform: template
+    name: "SCD41 Extra Temperature Offset"
+    id: scd41_extra_temperature_offset
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_value: 0.0
+    min_value: -20.0
+    max_value: 20.0
+    step: 0.1
+    unit_of_measurement: "°C"
+    mode: box
+
+  - platform: template
+    name: "SCD41 Humidity Offset"
+    id: scd41_humidity_offset
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_value: 0.0
+    min_value: -20.0
+    max_value: 20.0
+    step: 0.1
+    unit_of_measurement: "%"
+    mode: box
+
+button:
+  - platform: template
+    name: "SCD41 Calibrate Fresh Air"
+    id: scd41_calibrate_426
+    entity_category: config
+    icon: mdi:tune
+    on_press:
+      - scd4x.perform_forced_calibration:
+          id: scd41_sensor
+          value: 426

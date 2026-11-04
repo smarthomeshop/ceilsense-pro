@@ -1,0 +1,41 @@
+# WiFi provisioning. The W5500 power rail is disabled on PCB#1.
+switch:
+  - platform: gpio
+    id: ethernet_power_off
+    name: "Ethernet Power Off"
+    internal: true
+    pin: GPIO12
+    restore_mode: ALWAYS_ON
+
+wifi:
+  # Keep running standalone when WiFi is down; smoke alarm logic is local.
+  reboot_timeout: 0s
+  ap:
+    ssid: ${device_name}
+    password: ${device_name}
+
+captive_portal:
+
+improv_serial:
+  next_url: "https://api.smarthomeshop.io/setup/welcome?device={{device_name}}&ip={{ip_address}}&cloud=${cloud_enabled}&hw=${ceilsense_hardware_version}"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "WiFi IP Address"
+      id: network_ip
+      entity_category: diagnostic
+      disabled_by_default: true
+    mac_address:
+      name: "WiFi MAC"
+      id: network_mac
+      entity_category: diagnostic
+      disabled_by_default: true
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_sensor
+    update_interval: 60s
+    entity_category: diagnostic
+    disabled_by_default: true

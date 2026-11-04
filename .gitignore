@@ -1,0 +1,12 @@
+.esphome/
+build/
+**/build/
+tmp/
+secrets.yaml
+**/.esphome/
+**/__pycache__/
+.DS_Store
+*.py[cod]
+*.bin
+*.elf
+*.map

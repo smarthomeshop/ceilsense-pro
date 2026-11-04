@@ -1,0 +1,21 @@
+# Stable combined presence entity across all radar variants.
+binary_sensor:
+  - platform: template
+    name: "Presence"
+    id: presence
+    device_class: occupancy
+    lambda: return id(tracking_presence).state || id(secondary_presence).state;
+    on_press:
+      - if:
+          condition:
+            and:
+              - binary_sensor.is_off: adpd188bi_smoke_alert
+              - switch.is_off: remote_smoke_alarm
+              - lambda: return !id(voice_visual_active);
+          then:
+            - light.turn_on:
+                id: status_led
+                brightness: 60%
+                effect: "Presence Active"
+    on_release:
+      - script.execute: restore_status_led

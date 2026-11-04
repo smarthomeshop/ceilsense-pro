@@ -1,0 +1,105 @@
+name: ESPHome CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ESPHOME_VERSION: "2026.6.1"
+
+jobs:
+  repository-tests:
+    name: Repository tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+  build-firmware:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: WiFi
+            file: ceilsense-pro-wifi.yaml
+            artifact: ceilsense-pro-wifi
+          - name: WiFi Local
+            file: ceilsense-pro-wifi-local.yaml
+            artifact: ceilsense-pro-wifi-local
+          - name: PoE Ethernet
+            file: ceilsense-pro-poe.yaml
+            artifact: ceilsense-pro-poe
+          - name: V2 WiFi LD2450 and LD2412
+            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld2450-ld2412.yaml
+            artifact: ceilsense-pro-v2-wifi-ld2450-ld2412
+          - name: V2 Ethernet LD2450 and LD2412
+            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld2450-ld2412.yaml
+            artifact: ceilsense-pro-v2-ethernet-ld2450-ld2412
+          - name: V2 WiFi LD2460
+            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld2460.yaml
+            artifact: ceilsense-pro-v2-wifi-ld2460
+          - name: V2 Ethernet LD2460
+            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld2460.yaml
+            artifact: ceilsense-pro-v2-ethernet-ld2460
+          - name: V2 WiFi LD6002B
+            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld6002b.yaml
+            artifact: ceilsense-pro-v2-wifi-ld6002b
+          - name: V2 Ethernet LD6002B
+            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld6002b.yaml
+            artifact: ceilsense-pro-v2-ethernet-ld6002b
+          - name: V2 WiFi Local
+            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-local.yaml
+            artifact: ceilsense-pro-v2-wifi-local
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create build-only secrets
+        run: |
+          printf 'wifi_ssid: "CI-DUMMY"\nwifi_password: "CI-DUMMY-PASSWORD"\n' > secrets.yaml
+          cp secrets.yaml ceilsense-pro-v2/secrets.yaml
+
+      - name: Validate configuration
+        run: |
+          docker run --rm -v "$PWD":/config -w /config \
+            "esphome/esphome:${ESPHOME_VERSION}" config "${{ matrix.file }}"
+
+      - name: Compile firmware
+        run: |
+          docker run --rm -v "$PWD":/config -w /config \
+            "esphome/esphome:${ESPHOME_VERSION}" compile "${{ matrix.file }}"
+
+      - name: Collect firmware
+        run: |
+          mkdir -p dist
+          factory_bin=$(find . -type f -path "*/${{ matrix.artifact }}/*" -name firmware.factory.bin -print -quit)
+          ota_bin=$(find . -type f -path "*/${{ matrix.artifact }}/*" -name firmware.bin -print -quit)
+          test -n "$factory_bin"
+          test -n "$ota_bin"
+          cp "$factory_bin" "dist/${{ matrix.artifact }}.factory.bin"
+          cp "$ota_bin" "dist/${{ matrix.artifact }}.ota.bin"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*.bin
+          if-no-files-found: error
+
+  alarm-host-test:
+    name: Buzzer and alarm host integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run host test
+        run: |
+          docker run --rm -v "$PWD":/config -w /config \
+            --entrypoint /bin/bash "esphome/esphome:${ESPHOME_VERSION}" -lc \
+            'esphome compile tests/buzzer-smoke-host.yaml && \
+             tests/.esphome/build/ceilsense-pro-buzzer-test/.pioenvs/ceilsense-pro-buzzer-test/program'

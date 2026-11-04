@@ -1,0 +1,39 @@
+# Production WiFi. Drive GPIO48 high to disable the W5500 rail.
+switch:
+  - platform: gpio
+    id: ethernet_power_off
+    internal: true
+    pin: GPIO48
+    restore_mode: ALWAYS_ON
+
+wifi:
+  reboot_timeout: 0s
+  ap:
+    ssid: ${device_name}
+    password: ${device_name}
+
+captive_portal:
+
+improv_serial:
+  next_url: "https://api.smarthomeshop.io/setup/welcome?device={{device_name}}&ip={{ip_address}}&cloud=${cloud_enabled}&hw=${ceilsense_hardware_version}"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "WiFi IP Address"
+      id: network_ip
+      entity_category: diagnostic
+      disabled_by_default: true
+    mac_address:
+      name: "WiFi MAC"
+      id: network_mac
+      entity_category: diagnostic
+      disabled_by_default: true
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_sensor
+    update_interval: 60s
+    entity_category: diagnostic
+    disabled_by_default: true
