@@ -52,14 +52,17 @@ jobs:
         run: |
           mkdir -p dist
           if [[ "${{ matrix.file }}" == ceilsense-pro-v2/* ]]; then
-            build_dir="ceilsense-pro-v2/build/${{ matrix.artifact }}/.pioenvs/ceilsense-pro-v2"
+            build_dir="ceilsense-pro-v2/build/${{ matrix.artifact }}"
           else
-            build_dir=".esphome/build/${{ matrix.artifact }}/.pioenvs/ceilsense-pro"
+            build_dir=".esphome/build/${{ matrix.artifact }}"
           fi
-          factory_bin="$build_dir/firmware.factory.bin"
-          ota_bin="$build_dir/firmware.bin"
-          test -f "$factory_bin"
-          test -f "$ota_bin"
+          shopt -s nullglob
+          factory_bins=("$build_dir"/.pioenvs/*/firmware.factory.bin)
+          ota_bins=("$build_dir"/.pioenvs/*/firmware.bin)
+          test "${#factory_bins[@]}" -eq 1
+          test "${#ota_bins[@]}" -eq 1
+          factory_bin="${factory_bins[0]}"
+          ota_bin="${ota_bins[0]}"
           cp "$factory_bin" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.factory.bin"
           cp "$ota_bin" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.ota.bin"
       - uses: actions/upload-artifact@v4
