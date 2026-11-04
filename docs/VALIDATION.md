@@ -5,8 +5,7 @@
 The following checks run in GitHub Actions and can also be run locally:
 
 - repository structure and safety tests;
-- ESPHome configuration validation for every V1 network/radar variant and the
-  two root aliases;
+- ESPHome configuration validation for every V1 network/radar variant;
 - complete compilation of all CeilSense Pro V1 firmware variants;
 - host compilation and execution of buzzer priority, mute, hush, self-test and
   alarm-loop automation.

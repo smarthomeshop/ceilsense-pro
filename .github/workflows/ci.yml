@@ -28,42 +28,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Default WiFi alias
-            file: ceilsense-pro-wifi.yaml
-            artifact: ceilsense-pro-wifi
-            build_variant: ceilsense-pro-v1-wifi-ld2450-ld2412
-          - name: Default Ethernet alias
-            file: ceilsense-pro-ethernet.yaml
-            artifact: ceilsense-pro-ethernet
-            build_variant: ceilsense-pro-v1-ethernet-ld2450-ld2412
           - name: V1 WiFi LD2450 and LD2412
             file: ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2450-ld2412.yaml
             artifact: ceilsense-pro-v1-wifi-ld2450-ld2412
-            build_variant: ceilsense-pro-v1-wifi-ld2450-ld2412
           - name: V1 Ethernet LD2450 and LD2412
             file: ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2450-ld2412.yaml
             artifact: ceilsense-pro-v1-ethernet-ld2450-ld2412
-            build_variant: ceilsense-pro-v1-ethernet-ld2450-ld2412
           - name: V1 WiFi LD2460
             file: ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2460.yaml
             artifact: ceilsense-pro-v1-wifi-ld2460
-            build_variant: ceilsense-pro-v1-wifi-ld2460
           - name: V1 Ethernet LD2460
             file: ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2460.yaml
             artifact: ceilsense-pro-v1-ethernet-ld2460
-            build_variant: ceilsense-pro-v1-ethernet-ld2460
           - name: V1 WiFi LD6002B
             file: ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld6002b.yaml
             artifact: ceilsense-pro-v1-wifi-ld6002b
-            build_variant: ceilsense-pro-v1-wifi-ld6002b
           - name: V1 Ethernet LD6002B
             file: ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld6002b.yaml
             artifact: ceilsense-pro-v1-ethernet-ld6002b
-            build_variant: ceilsense-pro-v1-ethernet-ld6002b
           - name: V1 WiFi Local
             file: ceilsense-pro-v1/ceilsense-pro-v1-wifi-local.yaml
             artifact: ceilsense-pro-v1-wifi-local
-            build_variant: ceilsense-pro-v1-wifi-local
     steps:
       - uses: actions/checkout@v7
 
@@ -85,11 +70,7 @@ jobs:
       - name: Collect firmware
         run: |
           mkdir -p dist
-          if [[ "${{ matrix.file }}" == ceilsense-pro-v1/* ]]; then
-            build_dir="ceilsense-pro-v1/build/${{ matrix.build_variant }}"
-          else
-            build_dir=".esphome/build/${{ matrix.build_variant }}"
-          fi
+          build_dir="ceilsense-pro-v1/build/${{ matrix.artifact }}"
           shopt -s nullglob
           factory_bins=("$build_dir"/.pioenvs/*/firmware.factory.bin)
           ota_bins=("$build_dir"/.pioenvs/*/firmware.bin)

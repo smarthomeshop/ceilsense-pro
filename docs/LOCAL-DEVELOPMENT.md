@@ -18,10 +18,12 @@ Improv onboarding instead of credentials stored in the configuration.
 
 ```sh
 docker run --rm -v "$PWD":/config -w /config \
-  esphome/esphome:2026.6.1 config ceilsense-pro-wifi.yaml
+  esphome/esphome:2026.6.1 config \
+  ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2450-ld2412.yaml
 
 docker run --rm -v "$PWD":/config -w /config \
-  esphome/esphome:2026.6.1 compile ceilsense-pro-ethernet.yaml
+  esphome/esphome:2026.6.1 compile \
+  ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2450-ld2412.yaml
 
 docker run --rm -v "$PWD":/config -w /config \
   esphome/esphome:2026.6.1 compile \

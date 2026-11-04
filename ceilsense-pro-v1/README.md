@@ -13,8 +13,6 @@ optical aerosol sensor.
 | LD2460 | `ceilsense-pro-v1-wifi-ld2460.yaml` | `ceilsense-pro-v1-ethernet-ld2460.yaml` |
 | LD6002B (beta) | `ceilsense-pro-v1-wifi-ld6002b.yaml` | `ceilsense-pro-v1-ethernet-ld6002b.yaml` |
 
-The repository root aliases `ceilsense-pro-wifi.yaml` and
-`ceilsense-pro-ethernet.yaml` select the standard LD2450 + LD2412 assembly.
 Only install firmware matching the radar hardware fitted to the PCB.
 
 For local development, copy `secrets.example.yaml` to `secrets.yaml` and use

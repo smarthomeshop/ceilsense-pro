@@ -8,15 +8,6 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 V1 = ROOT / "ceilsense-pro-v1"
 
-ROOT_ALIASES = {
-    "ceilsense-pro-wifi.yaml": (
-        "ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2450-ld2412.yaml"
-    ),
-    "ceilsense-pro-ethernet.yaml": (
-        "ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2450-ld2412.yaml"
-    ),
-}
-
 V1_ENTRYPOINTS = {
     "ceilsense-pro-v1-wifi-ld2450-ld2412.yaml": (
         "network-wifi.yaml",
@@ -50,16 +41,8 @@ V1_ENTRYPOINTS = {
 
 
 class RepositoryTest(unittest.TestCase):
-    def test_root_aliases_select_standard_v1_firmware(self):
-        for alias, target in ROOT_ALIASES.items():
-            text = (ROOT / alias).read_text()
-            with self.subTest(alias=alias):
-                self.assertIn(f"!include {target}", text)
-                self.assertIn("adpd188bi_components_path: components", text)
-                self.assertIn("build_root: build", text)
-                self.assertIn(
-                    f"github://smarthomeshop/ceilsense-pro/{alias}@main", text
-                )
+    def test_firmware_entrypoints_stay_in_v1_directory(self):
+        self.assertEqual([], sorted(ROOT.glob("ceilsense-pro*.yaml")))
 
     def test_v1_entrypoints_include_complete_hardware_stack(self):
         for entrypoint, packages in V1_ENTRYPOINTS.items():
@@ -144,7 +127,7 @@ class RepositoryTest(unittest.TestCase):
         self.assertIn("**/.esphome/", ignore)
 
     def test_no_plaintext_wifi_values_in_firmware(self):
-        paths = list(ROOT.glob("*.yaml")) + list((ROOT / "packages").glob("*.yaml"))
+        paths = list((ROOT / "packages").glob("*.yaml"))
         paths += list(V1.glob("*.yaml"))
         for path in paths:
             text = path.read_text()

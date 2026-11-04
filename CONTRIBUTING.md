@@ -17,11 +17,6 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Validate all ESPHome entry points with Docker:
 
 ```sh
-for file in ceilsense-pro-wifi.yaml ceilsense-pro-ethernet.yaml; do
-  docker run --rm -v "$PWD":/config -w /config \
-    esphome/esphome:2026.6.1 config "$file"
-done
-
 for file in ceilsense-pro-v1/ceilsense-pro-v1-*.yaml; do
   docker run --rm -v "$PWD":/config -w /config \
     esphome/esphome:2026.6.1 config "$file"

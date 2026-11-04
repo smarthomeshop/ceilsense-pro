@@ -24,9 +24,8 @@ Voice Assistant and three radar assembly options.
 | LD2460 | `ceilsense-pro-v1-wifi-ld2460.yaml` | `ceilsense-pro-v1-ethernet-ld2460.yaml` |
 | LD6002B | `ceilsense-pro-v1-wifi-ld6002b.yaml` | `ceilsense-pro-v1-ethernet-ld6002b.yaml` |
 
-These files live in [`ceilsense-pro-v1/`](ceilsense-pro-v1/). The root aliases
-`ceilsense-pro-wifi.yaml` and `ceilsense-pro-ethernet.yaml` select the standard
-LD2450 + LD2412 assembly. The local development file
+All firmware files live in [`ceilsense-pro-v1/`](ceilsense-pro-v1/). The local
+development file
 `ceilsense-pro-v1-wifi-local.yaml` also uses that standard hardware.
 Only install firmware matching the radar module or modules physically fitted.
 The LD6002B integration currently uses the pinned `v0.1.0-beta.1` component
@@ -50,11 +49,11 @@ The complete V1 pin map is in [`docs/HARDWARE.md`](docs/HARDWARE.md).
 ## Build
 
 ```bash
-esphome config ceilsense-pro-wifi.yaml
-esphome compile ceilsense-pro-wifi.yaml
+esphome config ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2450-ld2412.yaml
+esphome compile ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2450-ld2412.yaml
 
-esphome config ceilsense-pro-ethernet.yaml
-esphome compile ceilsense-pro-ethernet.yaml
+esphome config ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2450-ld2412.yaml
+esphome compile ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2450-ld2412.yaml
 
 # Local WiFi development
 cp ceilsense-pro-v1/secrets.example.yaml ceilsense-pro-v1/secrets.yaml
