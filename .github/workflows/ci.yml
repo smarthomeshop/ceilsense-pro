@@ -17,7 +17,7 @@ jobs:
     name: Repository tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run tests
         run: python3 -m unittest discover -s tests -p 'test_*.py' -v
 
@@ -59,7 +59,7 @@ jobs:
             file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-local.yaml
             artifact: ceilsense-pro-v2-wifi-local
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Create build-only secrets
         run: |
@@ -96,7 +96,7 @@ jobs:
     name: Buzzer and alarm host integration
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Compile and run host test
         run: |
           docker run --rm -v "$PWD":/config -w /config \

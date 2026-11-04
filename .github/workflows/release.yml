@@ -43,7 +43,7 @@ jobs:
             file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld6002b.yaml
             artifact: ceilsense-pro-v2-ethernet-ld6002b
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Compile firmware
         run: |
           docker run --rm -v "$PWD":/config -w /config \
