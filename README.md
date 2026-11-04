@@ -12,62 +12,53 @@ speaker, buzzer and a 16-pixel LED ring.
 > Legal](#smoke-detection-disclaimer--certification--legal) before using,
 > distributing or selling this product.
 
-The repository supports two hardware generations:
+CeilSense Pro V1 is the first CeilSense Pro hardware release. It uses an
+ESP32-S3-WROOM-1-N16R8 with native USB, BOOT/RESET controls, PSRAM, microphone,
+Voice Assistant and three radar assembly options.
 
-| Hardware | Controller | Status | Main differences |
-| --- | --- | --- | --- |
-| V1 | ESP32-C6-WROOM-1-N8 | Development/legacy | USB-UART, LD2450 + LD2412, speaker without microphone |
-| V2 | ESP32-S3-WROOM-1-N16R8 | Current | Native USB, BOOT/RESET, PSRAM, microphone, Voice Assistant and three radar options |
-
-## V2 Firmware Variants
+## V1 Firmware Variants
 
 | Radar hardware | WiFi | PoE/Ethernet |
 | --- | --- | --- |
-| LD2450 + LD2412 | `ceilsense-pro-v2-wifi-ld2450-ld2412.yaml` | `ceilsense-pro-v2-ethernet-ld2450-ld2412.yaml` |
-| LD2460 | `ceilsense-pro-v2-wifi-ld2460.yaml` | `ceilsense-pro-v2-ethernet-ld2460.yaml` |
-| LD6002B | `ceilsense-pro-v2-wifi-ld6002b.yaml` | `ceilsense-pro-v2-ethernet-ld6002b.yaml` |
+| LD2450 + LD2412 (standard) | `ceilsense-pro-v1-wifi-ld2450-ld2412.yaml` | `ceilsense-pro-v1-ethernet-ld2450-ld2412.yaml` |
+| LD2460 | `ceilsense-pro-v1-wifi-ld2460.yaml` | `ceilsense-pro-v1-ethernet-ld2460.yaml` |
+| LD6002B | `ceilsense-pro-v1-wifi-ld6002b.yaml` | `ceilsense-pro-v1-ethernet-ld6002b.yaml` |
 
-These files live in `ceilsense-pro-v2/`. The local development file
-`ceilsense-pro-v2-wifi-local.yaml` uses the standard LD2450 + LD2412 hardware.
+These files live in [`ceilsense-pro-v1/`](ceilsense-pro-v1/). The root aliases
+`ceilsense-pro-wifi.yaml` and `ceilsense-pro-ethernet.yaml` select the standard
+LD2450 + LD2412 assembly. The local development file
+`ceilsense-pro-v1-wifi-local.yaml` also uses that standard hardware.
 Only install firmware matching the radar module or modules physically fitted.
 The LD6002B integration currently uses the pinned `v0.1.0-beta.1` component
 and must complete the hardware acceptance tests before production use.
 
-The root `ceilsense-pro-wifi.yaml`, `ceilsense-pro-wifi-local.yaml` and
-`ceilsense-pro-poe.yaml` files remain available for V1 ESP32-C6 test boards.
-
 ## Main Features
 
-- ESP32-S3-WROOM-1-N16R8 with 16 MB flash and 8 MB PSRAM on V2
-- LD2450 + LD2412, LD2460 or LD6002B mmWave hardware on V2
+- ESP32-S3-WROOM-1-N16R8 with 16 MB flash and 8 MB PSRAM
+- LD2450 + LD2412, LD2460 or LD6002B mmWave hardware
 - SCD41 CO2, temperature and humidity
 - SGP41 VOC and NOx indices
-- VEML7700 illuminance and BMP388 temperature/pressure on V2
+- VEML7700 illuminance and BMP388 temperature/pressure
 - WiFi or W5500 Ethernet with PoE power
 - 16-pixel WS2812B LED ring
-- I2S microphone, MAX98357A speaker, local wake word and Home Assistant Voice Assistant on V2
+- I2S microphone, MAX98357A speaker, local wake word and Home Assistant Voice Assistant
 - Dedicated passive buzzer through the pinned `smarthomeshop/buzzer` package
 - Experimental ADPD188BI dual-wavelength optical aerosol measurement
 
-The complete V1 and V2 pin maps are in [`docs/HARDWARE.md`](docs/HARDWARE.md).
+The complete V1 pin map is in [`docs/HARDWARE.md`](docs/HARDWARE.md).
 
 ## Build
 
 ```bash
-cp secrets.example.yaml secrets.yaml
-# Edit secrets.yaml and set wifi_ssid / wifi_password.
-
-esphome run ceilsense-pro-wifi-local.yaml
-
 esphome config ceilsense-pro-wifi.yaml
 esphome compile ceilsense-pro-wifi.yaml
 
-esphome config ceilsense-pro-poe.yaml
-esphome compile ceilsense-pro-poe.yaml
+esphome config ceilsense-pro-ethernet.yaml
+esphome compile ceilsense-pro-ethernet.yaml
 
-# V2 local development
-cp ceilsense-pro-v2/secrets.example.yaml ceilsense-pro-v2/secrets.yaml
-esphome run ceilsense-pro-v2/ceilsense-pro-v2-wifi-local.yaml
+# Local WiFi development
+cp ceilsense-pro-v1/secrets.example.yaml ceilsense-pro-v1/secrets.yaml
+esphome run ceilsense-pro-v1/ceilsense-pro-v1-wifi-local.yaml
 ```
 
 Docker instructions, USB logging details and the difference between production
@@ -76,7 +67,7 @@ and local firmware are documented in
 
 ## Shared buzzer package
 
-All V1 and V2 entry points use `packages/buzzer.yaml`, which imports
+All V1 entry points use `packages/buzzer.yaml`, which imports
 [`smarthomeshop/buzzer`](https://github.com/smarthomeshop/buzzer) at **v1.0.0**.
 GPIO2 drives the on-board transistor; maximum PWM duty remains 40%. First-use volume is 100% of
 that limit, matching the previous 40% RTTTL gain. Later volume, mute and melody
@@ -113,6 +104,8 @@ It verifies automation behavior, not the physical optical sensor or sound level.
 
 ESPHome has no native ADPD188BI component, so this repo ships a local external
 component in `components/adpd188bi/` (loaded via `packages/adpd188bi.yaml`).
+CeilSense Pro is currently the only product using it, so the component stays
+in this repository and is versioned together with the product firmware.
 It configures the ADPD188BI with the smoke-detection register set from the ADI
 no-OS driver, reads Slot A (blue 470 nm LED) and Slot B (infrared 850 nm LED),
 tracks an adaptive baseline and derives a relative "smoke index" with a

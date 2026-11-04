@@ -1,4 +1,4 @@
-# Shared feature stack for every CeilSense Pro V2 firmware variant.
+# Shared feature stack for every CeilSense Pro V1 firmware variant.
 substitutions:
   adpd188bi_components_path: ../components
 

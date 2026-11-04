@@ -18,30 +18,24 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: WiFi
-            file: ceilsense-pro-wifi.yaml
-            artifact: ceilsense-pro-wifi
-          - name: PoE Ethernet
-            file: ceilsense-pro-poe.yaml
-            artifact: ceilsense-pro-poe
-          - name: V2 WiFi LD2450 and LD2412
-            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld2450-ld2412.yaml
-            artifact: ceilsense-pro-v2-wifi-ld2450-ld2412
-          - name: V2 Ethernet LD2450 and LD2412
-            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld2450-ld2412.yaml
-            artifact: ceilsense-pro-v2-ethernet-ld2450-ld2412
-          - name: V2 WiFi LD2460
-            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld2460.yaml
-            artifact: ceilsense-pro-v2-wifi-ld2460
-          - name: V2 Ethernet LD2460
-            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld2460.yaml
-            artifact: ceilsense-pro-v2-ethernet-ld2460
-          - name: V2 WiFi LD6002B
-            file: ceilsense-pro-v2/ceilsense-pro-v2-wifi-ld6002b.yaml
-            artifact: ceilsense-pro-v2-wifi-ld6002b
-          - name: V2 Ethernet LD6002B
-            file: ceilsense-pro-v2/ceilsense-pro-v2-ethernet-ld6002b.yaml
-            artifact: ceilsense-pro-v2-ethernet-ld6002b
+          - name: V1 WiFi LD2450 and LD2412
+            file: ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2450-ld2412.yaml
+            artifact: ceilsense-pro-v1-wifi-ld2450-ld2412
+          - name: V1 Ethernet LD2450 and LD2412
+            file: ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2450-ld2412.yaml
+            artifact: ceilsense-pro-v1-ethernet-ld2450-ld2412
+          - name: V1 WiFi LD2460
+            file: ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2460.yaml
+            artifact: ceilsense-pro-v1-wifi-ld2460
+          - name: V1 Ethernet LD2460
+            file: ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2460.yaml
+            artifact: ceilsense-pro-v1-ethernet-ld2460
+          - name: V1 WiFi LD6002B
+            file: ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld6002b.yaml
+            artifact: ceilsense-pro-v1-wifi-ld6002b
+          - name: V1 Ethernet LD6002B
+            file: ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld6002b.yaml
+            artifact: ceilsense-pro-v1-ethernet-ld6002b
     steps:
       - uses: actions/checkout@v7
       - name: Compile firmware
@@ -51,20 +45,14 @@ jobs:
       - name: Collect release files
         run: |
           mkdir -p dist
-          if [[ "${{ matrix.file }}" == ceilsense-pro-v2/* ]]; then
-            build_dir="ceilsense-pro-v2/build/${{ matrix.artifact }}"
-          else
-            build_dir=".esphome/build/${{ matrix.artifact }}"
-          fi
+          build_dir="ceilsense-pro-v1/build/${{ matrix.artifact }}"
           shopt -s nullglob
           factory_bins=("$build_dir"/.pioenvs/*/firmware.factory.bin)
           ota_bins=("$build_dir"/.pioenvs/*/firmware.bin)
           test "${#factory_bins[@]}" -eq 1
           test "${#ota_bins[@]}" -eq 1
-          factory_bin="${factory_bins[0]}"
-          ota_bin="${ota_bins[0]}"
-          cp "$factory_bin" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.factory.bin"
-          cp "$ota_bin" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.ota.bin"
+          cp "${factory_bins[0]}" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.factory.bin"
+          cp "${ota_bins[0]}" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.ota.bin"
       - uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.artifact }}

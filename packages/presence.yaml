@@ -1,7 +1,0 @@
-binary_sensor:
-  - platform: template
-    name: "Presence"
-    id: presence
-    device_class: occupancy
-    lambda: |-
-      return id(ld2412_presence).state || id(ld2450_presence).state;

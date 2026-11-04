@@ -1,24 +1,11 @@
-# CeilSense Pro WiFi firmware.
+# CeilSense Pro V1 standard WiFi firmware.
+# The standard radar assembly combines LD2450 and LD2412.
 substitutions:
-  device_name: ceilsense-pro
-  friendly_name: "CeilSense Pro"
-  ceilsense_hardware_version: "pro-v1-wifi"
-  build_variant: "ceilsense-pro-wifi"
-  default_network: "WiFi"
-  cloud_enabled: "false"
+  adpd188bi_components_path: components
+  build_root: build
 
 packages:
-  base: !include packages/base.yaml
-  network: !include packages/network_wifi.yaml
-  audio: !include packages/audio_max98357.yaml
-  buzzer: !include packages/buzzer.yaml
-  scd41: !include packages/scd41.yaml
-  sgp41: !include packages/sgp41.yaml
-  adpd188bi: !include packages/adpd188bi.yaml
-  smoke_alarm: !include packages/smoke_alarm.yaml
-  ld2412: !include packages/ld2412.yaml
-  ld2450: !include packages/ld2450.yaml
-  presence: !include packages/presence.yaml
+  product: !include ceilsense-pro-v1/ceilsense-pro-v1-wifi-ld2450-ld2412.yaml
 
 dashboard_import:
   package_import_url: github://smarthomeshop/ceilsense-pro/ceilsense-pro-wifi.yaml@main

@@ -1,4 +1,4 @@
-# CeilSense Pro V2 microphone and MAX98357A speaker path.
+# CeilSense Pro V1 microphone and MAX98357A speaker path.
 substitutions:
   microphone_channel: left
 

@@ -3,47 +3,41 @@
 ## ESPHome Dashboard
 
 Copy the repository into the ESPHome configuration directory or mount it into
-the ESPHome Docker container. Create a local secrets file:
+the ESPHome Docker container. For the local WiFi firmware, create a secrets
+file and fill in `wifi_ssid` and `wifi_password`:
 
 ```sh
-cp secrets.example.yaml secrets.yaml
-cp ceilsense-pro-v2/secrets.example.yaml ceilsense-pro-v2/secrets.yaml
+cp ceilsense-pro-v1/secrets.example.yaml ceilsense-pro-v1/secrets.yaml
 ```
 
-Fill in `wifi_ssid` and `wifi_password` in the generation you are building.
-Use `ceilsense-pro-wifi-local.yaml` for V1 C6 or
-`ceilsense-pro-v2/ceilsense-pro-v2-wifi-local.yaml` for the current V2 S3 board.
-Both local files use a stable hostname.
+Use `ceilsense-pro-v1/ceilsense-pro-v1-wifi-local.yaml` for development on a
+fixed WiFi network. Production WiFi firmware uses captive-portal and serial
+Improv onboarding instead of credentials stored in the configuration.
 
 ## Command-line build with Docker
 
 ```sh
 docker run --rm -v "$PWD":/config -w /config \
-  esphome/esphome:2026.6.1 config ceilsense-pro-wifi-local.yaml
+  esphome/esphome:2026.6.1 config ceilsense-pro-wifi.yaml
 
 docker run --rm -v "$PWD":/config -w /config \
-  esphome/esphome:2026.6.1 compile ceilsense-pro-wifi-local.yaml
+  esphome/esphome:2026.6.1 compile ceilsense-pro-ethernet.yaml
 
 docker run --rm -v "$PWD":/config -w /config \
   esphome/esphome:2026.6.1 compile \
-  ceilsense-pro-v2/ceilsense-pro-v2-wifi-local.yaml
+  ceilsense-pro-v1/ceilsense-pro-v1-wifi-local.yaml
 ```
 
-## Flashing
+## Flashing and logs
 
-Connect the board over USB-C and install the local WiFi variant from ESPHome
-Device Builder. After the first USB installation, subsequent builds can be sent
-over OTA while the device remains reachable.
+Connect the board over USB-C and install the matching firmware from ESPHome
+Device Builder. After the first USB installation, subsequent builds can be
+sent over OTA while the device remains reachable.
 
-Production WiFi variants use captive portal and serial Improv onboarding and
-add a MAC suffix. Local variants read fixed credentials from `secrets.yaml` and
-do not add the suffix.
-
-## Logs
-
-ESPHome API logs are the preferred method after the device joins the network.
-For V1 USB logs, select the board's USB-to-UART serial port. V2 uses ESP32-S3
-native USB on GPIO19/GPIO20 and exposes BOOT and RESET buttons for recovery.
+ESPHome API logs are preferred after the device joins the network. USB logs
+use the ESP32-S3 native USB Serial/JTAG interface on GPIO19/GPIO20. BOOT and
+RESET are available for recovery when automatic USB flashing cannot start the
+download mode.
 
 ## Validation commands
 

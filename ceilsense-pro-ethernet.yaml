@@ -1,0 +1,12 @@
+# CeilSense Pro V1 standard PoE/Ethernet firmware.
+# The standard radar assembly combines LD2450 and LD2412.
+substitutions:
+  adpd188bi_components_path: components
+  build_root: build
+
+packages:
+  product: !include ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld2450-ld2412.yaml
+
+dashboard_import:
+  package_import_url: github://smarthomeshop/ceilsense-pro/ceilsense-pro-ethernet.yaml@main
+  import_full_config: false

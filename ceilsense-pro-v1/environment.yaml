@@ -1,4 +1,4 @@
-# Environmental sensors fitted to, or exposed by, CeilSense Pro V2.
+# Environmental sensors fitted to, or exposed by, CeilSense Pro V1.
 substitutions:
   scd4x_temperature_offset: "5.0"
 

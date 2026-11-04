@@ -1,9 +1,10 @@
-# Shared CeilSense Pro V2 ESP32-S3 hardware.
+# Shared CeilSense Pro V1 ESP32-S3 hardware.
 substitutions:
-  project_name: "smarthomeshop.ceilsense_pro_v2"
-  project_version: "2.0.0"
+  project_name: "smarthomeshop.ceilsense_pro_v1"
+  project_version: "1.0.0"
   log_level: INFO
   i2c_frequency: 100kHz
+  build_root: ../build
 
 esphome:
   name: ${device_name}
@@ -13,7 +14,7 @@ esphome:
   project:
     name: ${project_name}
     version: ${project_version}
-  build_path: ../build/${build_variant}
+  build_path: ${build_root}/${build_variant}
   on_boot:
     - priority: 520
       then:

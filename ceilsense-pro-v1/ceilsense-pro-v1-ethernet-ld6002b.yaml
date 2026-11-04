@@ -1,0 +1,16 @@
+substitutions:
+  device_name: ceilsense-pro-v1
+  friendly_name: "CeilSense Pro V1"
+  ceilsense_hardware_version: "pro-v1-s3"
+  build_variant: "ceilsense-pro-v1-ethernet-ld6002b"
+  default_network: "PoE / Ethernet"
+  cloud_enabled: "false"
+
+packages:
+  common: !include device-common.yaml
+  network: !include network-ethernet.yaml
+  radar: !include radar-ld6002b.yaml
+
+dashboard_import:
+  package_import_url: github://smarthomeshop/ceilsense-pro/ceilsense-pro-v1/ceilsense-pro-v1-ethernet-ld6002b.yaml@main
+  import_full_config: false

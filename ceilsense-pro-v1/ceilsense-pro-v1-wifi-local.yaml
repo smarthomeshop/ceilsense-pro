@@ -1,8 +1,8 @@
 substitutions:
-  device_name: ceilsense-pro-v2-local
-  friendly_name: "CeilSense Pro V2 Local"
-  ceilsense_hardware_version: "pro-v2-s3"
-  build_variant: "ceilsense-pro-v2-wifi-local"
+  device_name: ceilsense-pro-v1-local
+  friendly_name: "CeilSense Pro V1 Local"
+  ceilsense_hardware_version: "pro-v1-s3"
+  build_variant: "ceilsense-pro-v1-wifi-local"
   default_network: "WiFi Local"
   cloud_enabled: "false"
 

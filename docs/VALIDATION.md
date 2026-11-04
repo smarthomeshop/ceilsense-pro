@@ -5,8 +5,9 @@
 The following checks run in GitHub Actions and can also be run locally:
 
 - repository structure and safety tests;
-- ESPHome configuration validation for every V1 and V2 network/radar variant;
-- complete compilation of all ten firmware variants;
+- ESPHome configuration validation for every V1 network/radar variant and the
+  two root aliases;
+- complete compilation of all CeilSense Pro V1 firmware variants;
 - host compilation and execution of buzzer priority, mute, hush, self-test and
   alarm-loop automation.
 
@@ -21,14 +22,14 @@ Run this checklist on every PCB revision before declaring the firmware ready.
 - [ ] WiFi firmware keeps the W5500 rail disabled.
 - [ ] SCD41 reports plausible CO2, temperature and humidity.
 - [ ] SGP41 reports VOC and NOx indices after warm-up.
-- [ ] V1 BH1750 or V2 VEML7700, plus BMP388, return plausible readings.
+- [ ] VEML7700 and BMP388 return plausible readings.
 - [ ] LD2412 reports moving and stationary presence.
 - [ ] LD2450 reports targets and all configured zones.
 - [ ] LED ring displays boot, presence and alarm effects correctly.
 - [ ] Buzzer never exceeds the configured 40% output cap.
 - [ ] MAX98357A produces clean mono audio without resetting the board.
-- [ ] V2 microphone channel and SEL wiring are confirmed with live RMS/voice input.
-- [ ] V2 local wake word restarts after a Voice Assistant response and disconnect.
+- [ ] Microphone channel and SEL wiring are confirmed with live RMS/voice input.
+- [ ] Local wake word restarts after a Voice Assistant response and disconnect.
 - [ ] Each fitted radar option is tested only with its matching firmware.
 - [ ] LD6002B beta firmware is bench-tested before any field installation.
 - [ ] ADPD188BI device ID and eFuse calibration are valid.
