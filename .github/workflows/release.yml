@@ -51,10 +51,15 @@ jobs:
       - name: Collect release files
         run: |
           mkdir -p dist
-          factory_bin=$(find . -type f -path "*/${{ matrix.artifact }}/*" -name firmware.factory.bin -print -quit)
-          ota_bin=$(find . -type f -path "*/${{ matrix.artifact }}/*" -name firmware.bin -print -quit)
-          test -n "$factory_bin"
-          test -n "$ota_bin"
+          if [[ "${{ matrix.file }}" == ceilsense-pro-v2/* ]]; then
+            build_dir="ceilsense-pro-v2/build/${{ matrix.artifact }}/.pioenvs/ceilsense-pro-v2"
+          else
+            build_dir=".esphome/build/${{ matrix.artifact }}/.pioenvs/ceilsense-pro"
+          fi
+          factory_bin="$build_dir/firmware.factory.bin"
+          ota_bin="$build_dir/firmware.bin"
+          test -f "$factory_bin"
+          test -f "$ota_bin"
           cp "$factory_bin" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.factory.bin"
           cp "$ota_bin" "dist/${{ matrix.artifact }}-${GITHUB_REF_NAME}.ota.bin"
       - uses: actions/upload-artifact@v4
